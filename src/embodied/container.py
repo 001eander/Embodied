@@ -9,6 +9,7 @@ from dataclasses import dataclass
 
 from .service import (
     AudioService,
+    BehaviorService,
     CameraService,
     EscapeHatchService,
     GatewayService,
@@ -34,6 +35,7 @@ class Container:
     speech: SpeechService
     motion: MotionService
     movement: MovementService
+    behavior: BehaviorService
     camera: CameraService
     led: LedService
     audio: AudioService
@@ -47,6 +49,7 @@ def build_container(settings: Settings, robot: RobotPort | None = None) -> Conta
     queue = ThreadJobQueue()
 
     movement_service = MovementService(movements, robot)
+    behavior_service = BehaviorService(robot)
     return Container(
         settings=settings,
         robot=robot,
@@ -54,11 +57,12 @@ def build_container(settings: Settings, robot: RobotPort | None = None) -> Conta
         speech=SpeechService(robot, default_language=settings.asr_language),
         motion=MotionService(robot),
         movement=movement_service,
+        behavior=behavior_service,
         camera=CameraService(robot),
         led=LedService(robot),
         audio=AudioService(robot),
         escape=EscapeHatchService(
             robot, settings.enable_escape_hatch, settings.allowed_services
         ),
-        jobs=JobService(queue, movement_service, robot),
+        jobs=JobService(queue, movement_service, behavior_service, robot),
     )

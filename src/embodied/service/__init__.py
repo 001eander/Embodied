@@ -13,6 +13,7 @@ from .gateway import GatewayService
 from .speech import SpeechService
 from .motion import MotionService
 from .movement import MovementService
+from .behavior import BehaviorService
 from .camera import CameraService
 from .led import LedService
 from .audio import AudioService
@@ -29,6 +30,7 @@ __all__ = [
     "SpeechService",
     "MotionService",
     "MovementService",
+    "BehaviorService",
     "CameraService",
     "LedService",
     "AudioService",

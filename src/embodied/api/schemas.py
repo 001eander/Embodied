@@ -33,6 +33,10 @@ class MovementRequest(BaseModel):
     timeout_s: float | None = None
 
 
+class BehaviorRequest(BaseModel):
+    wait: bool = False
+
+
 class ListenRequest(BaseModel):
     vocabulary: list[str] = Field(..., min_length=1)
     timeout_s: float = Field(6.0, gt=0.0, le=60.0)

@@ -47,6 +47,17 @@ class MovementResult:
 
 
 @dataclass(frozen=True)
+class BehaviorResult:
+    """一段官方行为（ALBehaviorManager）的执行结果。"""
+
+    name: str
+    duration_s: float
+
+    def to_dict(self) -> dict:
+        return {"name": self.name, "duration_s": self.duration_s}
+
+
+@dataclass(frozen=True)
 class SpeechResult:
     recognized: bool
     word: str | None

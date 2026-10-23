@@ -45,6 +45,11 @@ class UnknownMovementError(RobotError):
     status = 404
 
 
+class UnknownBehaviorError(RobotError):
+    code = "unknown_behavior"
+    status = 404
+
+
 class UnknownPostureError(RobotError):
     code = "unknown_posture"
     status = 404

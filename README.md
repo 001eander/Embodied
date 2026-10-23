@@ -70,6 +70,7 @@ uv run embodied serve --dry-run
 | 说话 | `say`（可 `animated`）、`stop` |
 | 姿态/运动 | `wake` / `rest` / `list_postures` / `go_to_posture` / `set_angles` / `walk` |
 | 动作舞蹈 | `list_dances` / `dance`（异步任务，`get_job` 轮询）/ `cancel_job` |
+| 官方行为 | `list_behaviors` / `run_behavior`（ALBehaviorManager，异步任务） |
 | 摄像头 | `snapshot` / `mjpeg` / `info` |
 | 语音识别 | `listen`（给定词表，返回识别词与置信度） |
 | LED/音量 | `set_leds` / `leds_off` / `set_volume` / `get_volume` |

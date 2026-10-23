@@ -6,6 +6,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Callable
 
 from ..domain.entities import (
+    BehaviorResult,
     Job,
     Movement,
     MovementInfo,
@@ -67,6 +68,13 @@ class RobotPort(ABC):
 
     @abstractmethod
     def play_trajectory(self, movement: Movement) -> MovementResult: ...
+
+    # -- 官方行为库 ---------------------------------------------------------
+    @abstractmethod
+    def list_behaviors(self) -> list[str]: ...
+
+    @abstractmethod
+    def run_behavior(self, name: str) -> BehaviorResult: ...
 
     # -- 摄像头 -------------------------------------------------------------
     @abstractmethod

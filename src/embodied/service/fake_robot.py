@@ -7,13 +7,18 @@ import time
 
 from PIL import Image
 
-from ..domain.entities import Movement, MovementResult, SpeechResult
+from ..domain.entities import BehaviorResult, Movement, MovementResult, SpeechResult
 from ..domain.errors import ServiceUnavailableError, UnknownPostureError, ValidationError
 from ..domain.values import Color
 from .config import Settings
 from .ports import RobotPort
 
 _POSTURES = ["Stand", "StandInit", "StandZero", "Crouch", "Sit", "LyingBelly", "LyingBack"]
+_BEHAVIORS = [
+    "animations/Stand/Gestures/Hey_1",
+    "animations/Stand/Gestures/BowShort_1",
+    "animations/Stand/Gestures/Salute_1",
+]
 
 
 class FakeRobot(RobotPort):
@@ -88,6 +93,16 @@ class FakeRobot(RobotPort):
         return MovementResult(
             name=movement.name, duration_s=0.05, joints=len(movement.names)
         )
+
+    # -- 官方行为库 --------------------------------------------------------
+    def list_behaviors(self) -> list[str]:
+        return list(_BEHAVIORS)
+
+    def run_behavior(self, name: str) -> BehaviorResult:
+        time.sleep(0.05)
+        self._awake = True
+        self._posture = None
+        return BehaviorResult(name=name, duration_s=0.05)
 
     # -- 摄像头 ------------------------------------------------------------
     def start_camera(self) -> None:

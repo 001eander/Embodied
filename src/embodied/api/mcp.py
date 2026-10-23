@@ -18,8 +18,8 @@ def build_mcp(container: Any) -> FastMCP:
     mcp = FastMCP(
         "NAO Embodied",
         instructions=(
-            "操控 NAO 机器人的工具集。会说话、摆姿态、走路、跳舞、看摄像头、听语音、控制 LED。"
-            "长动作（dance）会立即返回 job_id，用 get_job 轮询；随时可用 stop 急停。"
+            "操控 NAO 机器人的工具集。会说话、摆姿态、走路、跳舞、执行官方行为、看摄像头、听语音、控制 LED。"
+            "长动作（dance / run_behavior）会立即返回 job_id，用 get_job 轮询；随时可用 stop 急停。"
         ),
     )
 
@@ -150,6 +150,27 @@ def build_mcp(container: Any) -> FastMCP:
         try:
             cancelled = container.jobs.cancel(job_id)
             return {"ok": cancelled, "cancelled": cancelled}
+        except RobotError as exc:
+            return _error(exc)
+
+    # -- 官方行为库 --------------------------------------------------------
+    @mcp.tool
+    def list_behaviors() -> dict:
+        """列出机器人上安装的官方行为名称（完整路径，用于 run_behavior）。"""
+        try:
+            return {"behaviors": container.behavior.list()}
+        except RobotError as exc:
+            return _error(exc)
+
+    @mcp.tool
+    def run_behavior(name: str, wait: bool = False) -> dict:
+        """执行官方行为，name 用 list_behaviors 返回的完整路径。默认立即返回 job_id。"""
+        try:
+            container.behavior.ensure_exists(name)
+            if wait:
+                return {"ok": True, **container.behavior.execute(name).to_dict()}
+            job = container.jobs.submit_behavior(name)
+            return {"ok": True, "job_id": job.id, "status": job.status.value}
         except RobotError as exc:
             return _error(exc)
 

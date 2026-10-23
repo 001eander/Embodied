@@ -19,7 +19,7 @@ from typing import Any, Iterator
 import qi
 from PIL import Image
 
-from ..domain.entities import Movement, MovementResult, SpeechResult
+from ..domain.entities import BehaviorResult, Movement, MovementResult, SpeechResult
 from ..domain.errors import (
     ActionTimeoutError,
     RobotCallError,
@@ -35,8 +35,9 @@ from ..domain.values import Color
 from .config import Settings
 from .ports import RobotPort
 
-_MOTION_SERVICES = frozenset({"ALMotion", "ALRobotPosture"})
+_MOTION_SERVICES = frozenset({"ALMotion", "ALRobotPosture", "ALBehaviorManager"})
 _COLOR_SPACE_RGB = 11
+_BEHAVIOR_POLL_S = 0.2
 
 
 def connect(ip: str, port: int = 9559) -> qi.Session:
@@ -182,6 +183,7 @@ class QiRobot(RobotPort):
         self._awake = False
         self._posture: str | None = None
         self._tts_language: str | None = None
+        self._behaviors: list[str] | None = None
 
     # -- 连接 ---------------------------------------------------------------
     @property
@@ -202,6 +204,7 @@ class QiRobot(RobotPort):
     def disconnect(self) -> None:
         self.stop_camera()
         self._services.clear()
+        self._behaviors = None
         if self._session is not None:
             try:
                 self._session.close()
@@ -367,6 +370,41 @@ class QiRobot(RobotPort):
             duration_s=round(time.perf_counter() - started, 3),
             joints=len(movement.names),
         )
+
+    # -- 官方行为库 ---------------------------------------------------------
+    def list_behaviors(self) -> list[str]:
+        if self._behaviors is None:
+            # 只读查询，绕过运动锁，避免有行为在跑时提交新任务先被锁住
+            installed = self._invoke("ALBehaviorManager", "getInstalledBehaviors")
+            self._behaviors = sorted(str(name) for name in installed)
+        return list(self._behaviors)
+
+    def run_behavior(self, name: str) -> BehaviorResult:
+        behavior = (name or "").strip()
+        started = time.perf_counter()
+        with self._motion(timeout=-1):
+            self._wake()
+            self._invoke("ALBehaviorManager", "runBehavior", (behavior,))
+            self._wait_behavior(behavior)
+            self._posture = None
+        return BehaviorResult(
+            name=behavior, duration_s=round(time.perf_counter() - started, 3)
+        )
+
+    def _wait_behavior(self, name: str) -> None:
+        """轮询到行为结束，让调用期间一直持有运动锁。
+
+        ``runBehavior`` 立即返回，首次查询可能早于行为真正启动，
+        因此连续两次查到未运行才判定结束。
+        """
+        idle_checks = 0
+        while idle_checks < 2:
+            if self._invoke("ALBehaviorManager", "isBehaviorRunning", (name,)):
+                idle_checks = 0
+            else:
+                idle_checks += 1
+            if idle_checks < 2:
+                time.sleep(_BEHAVIOR_POLL_S)
 
     # -- 摄像头 -------------------------------------------------------------
     def _ensure_camera(self, resolution: int | None = None) -> CameraStreamer:

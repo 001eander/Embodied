@@ -129,6 +129,22 @@ def start_movement(request: Request, name: str, body: schemas.MovementRequest):
     return {"job_id": job.id, "name": name, "status": job.status.value}
 
 
+# -- 官方行为库 ------------------------------------------------------------
+@router.get("/api/behaviors")
+def list_behaviors(request: Request) -> dict:
+    return {"behaviors": _container(request).behavior.list()}
+
+
+@router.post("/api/behaviors/{name:path}", status_code=202)
+def run_behavior(request: Request, name: str, body: schemas.BehaviorRequest):
+    container = _container(request)
+    container.behavior.ensure_exists(name)  # 未知行为直接 404
+    if body.wait:
+        return {"ok": True, **container.behavior.execute(name).to_dict()}
+    job = container.jobs.submit_behavior(name)
+    return {"job_id": job.id, "name": name, "status": job.status.value}
+
+
 @router.get("/api/jobs")
 def list_jobs(request: Request) -> dict:
     return {"jobs": [job.to_dict() for job in _container(request).jobs.list()]}
